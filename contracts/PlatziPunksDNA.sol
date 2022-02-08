@@ -201,7 +201,14 @@ contract PlatziPunksDNA{
         "ShortHairTheCaesarSidePart"
     ];
 
-    //TODO_ calcular ADN
+    //funcion pseudorandom determinista y no debe de ser usada en produccion
+    function deterministicPseudoRandomDNA(uint256 _tokenId, address _minter) public pure returns(uint256) {
+        uint256 combinedParams = _tokenId + uint160(_minter);
+        bytes memory encodedParams = abi.encodePacked(combinedParams);
+        bytes32 hashedParams = keccak256(encodedParams);
+
+        return uint256(hashedParams);
+    }
 
     //Get attributes
     uint8 constant ADN_SECTION_SIZE = 2;
@@ -210,13 +217,13 @@ contract PlatziPunksDNA{
         return uint8((_dna % (1*10**(_rigthDiscard + ADN_SECTION_SIZE))) / (1*10 ** _rigthDiscard));
     }
 
-    function _getAccesoriesType(uint8 _dna) public view returns(string memory){
-        uint8 dnaSection  = _getDNASection(_dna, 0);
+    function getAccessoriesType(uint256 _dna) public view returns(string memory){
+        uint256 dnaSection  = _getDNASection(_dna, 0);
         return _accessoriesType[dnaSection % _accessoriesType.length];
     }
 
-    function _getClotheColor(uint8 _dna) public view returns (string memory) {
-        uint8 dnaSection = _getDNASection(_dna, 2);
+    function getClotheColor(uint256 _dna) public view returns (string memory) {
+        uint256 dnaSection = _getDNASection(_dna, 2);
         return _clotheColor[dnaSection % _clotheColor.length];
     }
 
