@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -22,11 +22,39 @@ contract PlatziPunks is ERC721, ERC721Enumerable, PlatziPunksDNA {
         maxSupply = _maxSupply;
     }
 
-    function imageByDNA(uint256 _dna) public view returns (string memory) {
-        string memory baseURI = _baseURI();
-        string memory paramsURI = _paramsURI(_dna);
+    function mint() public {
+        uint256 current = _idCounter.current();
+        require(current < maxSupply, "No PlatziPunks left :(");
 
-        return string(abi.encodePacked(baseURI, "?", paramsURI));
+        tokenDNA[current] = deterministicPseudoRandomDNA(current, msg.sender);
+        _safeMint(msg.sender, current);
+        _idCounter.increment();        
+
+        console.log("current: ",current);
+        console.log("maxSupply: ",maxSupply);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        require(_exists(tokenId), "no existe el toquen, gege");
+        uint256 dna = tokenDNA[tokenId];
+        string memory image = imageByDNA(dna);
+        string memory attributes = attributesByDNA(dna);
+        string memory jsonURI = Base64.encode(
+            abi.encodePacked(
+                '{' 
+                '"name": "PlatziPunks #', tokenId.toString(),'",'
+                '"description": "Platzi Punks are randomized Avataaars stored on chain to teach DApp development on Platzi",'
+                '"image": "', image,'",'
+                 '"attributes":', attributes,
+                '}'
+            )
+        );
+        return string(abi.encodePacked("data:application/json;base64,", jsonURI));
     }
 
     function _baseURI() internal pure override returns (string memory) {
@@ -68,54 +96,35 @@ contract PlatziPunks is ERC721, ERC721Enumerable, PlatziPunksDNA {
         return string(abi.encodePacked(params, "&topType=", getTopType(_dna)));
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override
-        returns (string memory)
-    {
-        require(_exists(tokenId), "no existe el toquen, gege");
-        uint256 dna = tokenDNA[tokenId];
-        string memory image = imageByDNA(dna);
-        string memory jsonURI = Base64.encode(
-            abi.encodePacked(
-                '{' 
-                '"name": "PlatziPunks #', tokenId.toString(),'",'
-                '"description": "Platzi Punks are randomized Avataaars stored on chain to teach DApp development on Platzi",'
-                '"image": "', image,'",'
-                 '"attributes":['
-                    '{"trait_type": "Accesories", "value":"', getAccessoriesType(dna),'"},'
-                    '{"trait_type": "ClotheColor", "value":"', getClotheColor(dna),'"},'
-                    '{"trait_type": "ClotheType", "value":"', getClotheType(dna),'"},'
-                    '{"trait_type": "EyeType", "value":"', getEyeType(dna),'"},'
-                    '{"trait_type": "EyeBrowType", "value":"', getEyeBrowType(dna),'"},'
-                    '{"trait_type": "FacialHairColor", "value":"', getFacialHairColor(dna),'"},'
-                    '{"trait_type": "FacialHairType", "value":"', getFacialHairType(dna),'"},'
-                    '{"trait_type": "HairColor", "value":"', getHairColor(dna),'"},'
-                    '{"trait_type": "HatColor", "value":"', getHatColor(dna),'"},'
-                    '{"trait_type": "GraphicType", "value":"', getGraphicType(dna),'"},'
-                    '{"trait_type": "MouthType", "value":"', getMouthType(dna),'"},'
-                    '{"trait_type": "SkinColor", "value":"', getSkinColor(dna),'"},'
-                    '{"trait_type": "TopType", "value":"', getTopType(dna),'"}'
-                    ']'
-                '}'
-            )
-        );
+    function imageByDNA(uint256 _dna) public view returns (string memory) {
+        string memory baseURI = _baseURI();
+        string memory paramsURI = _paramsURI(_dna);
 
-        return
-            string(abi.encodePacked("data:application/json;base64,", jsonURI));
+        return string(abi.encodePacked(baseURI, "?", paramsURI));
     }
 
-    function mint() public {
-        uint256 current = _idCounter.current();
-        require(current < maxSupply, "No PlatziPunks left :(");
-
-        tokenDNA[current] = deterministicPseudoRandomDNA(current, msg.sender);
-        _safeMint(msg.sender, current);
-        _idCounter.increment();        
-
-        console.log("current: ",current);
-        console.log("maxSupply: ",maxSupply);
+    function attributesByDNA(uint256 _dna)public view returns (string memory) {
+        string memory params;
+        {
+            params = string(
+                abi.encodePacked(
+                    '['
+                    '{"trait_type": "Accesories", "value":"', getAccessoriesType(_dna),'"},'
+                    '{"trait_type": "ClotheColor", "value":"', getClotheColor(_dna),'"},'
+                    '{"trait_type": "ClotheType", "value":"', getClotheType(_dna),'"},'
+                    '{"trait_type": "EyeType", "value":"', getEyeType(_dna),'"},'
+                    '{"trait_type": "EyeBrowType", "value":"', getEyeBrowType(_dna),'"},'
+                    '{"trait_type": "FacialHairColor", "value":"', getFacialHairColor(_dna),'"},'
+                    '{"trait_type": "FacialHairType", "value":"', getFacialHairType(_dna),'"},'
+                    '{"trait_type": "HairColor", "value":"', getHairColor(_dna),'"},'
+                    '{"trait_type": "HatColor", "value":"', getHatColor(_dna),'"},'
+                    '{"trait_type": "GraphicType", "value":"', getGraphicType(_dna),'"},'
+                    '{"trait_type": "MouthType", "value":"', getMouthType(_dna),'"},'
+                    '{"trait_type": "SkinColor", "value":"', getSkinColor(_dna),'"},'
+                )
+            );
+        }
+        return string(abi.encodePacked(params,'{"trait_type": "TopType", "value":"', getTopType(_dna),'"}]'));
     }
 
     function _beforeTokenTransfer(
